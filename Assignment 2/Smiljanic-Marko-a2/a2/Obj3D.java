@@ -22,4 +22,12 @@ public abstract class Obj3D {
 		loc.setY(p.getY());
 		loc.setZ(p.getZ());
 	}
+	
+	public void addPoint(float x, float y, float z) {
+		Point3D p = new Point3D(x, y, z);
+		setPoint((float) loc.getX() + x, (float) loc.getY() + y, (float) loc.getZ() + z);
+	}
+	public void addPoint(Point3D p) {
+		setPoint((float) (loc.getX() + p.getX()), (float) (loc.getY() + p.getY()), (float) (loc.getZ() + p.getZ()));
+	}
 }

@@ -21,7 +21,7 @@ public class Starter extends JFrame implements GLEventListener {
 	
 	private GLSLUtils util = new GLSLUtils();
 	
-	SphereObj mySphere = new SphereObj(0.0f, 0.0f, -2.0f, 24);
+	SphereObj mySphere = new SphereObj(0.0f, 0.0f, -10.0f, 48);
 	
 	Point3D Cam_loc = new Point3D(0, 0, 1);
 	Vector3D V = new Vector3D(0, 1, 0);
@@ -81,9 +81,9 @@ public class Starter extends JFrame implements GLEventListener {
 		gl.glVertexAttribPointer(1, 2, GL_FLOAT, false, 0, 0);
 		gl.glEnableVertexAttribArray(1);
 		
-		Point3D V_mov = new Point3D(V.normalize());
-		V_mov = V_mov.mult(.01);
-		Cam_loc = Cam_loc.add(V_mov);
+		
+		System.out.println(mySphere.getPoint());
+		mySphere.addPoint(0.0f, 0.01f, 0.0f);
 		
 
 		//gl.glActiveTexture(GL_TEXTURE0);
