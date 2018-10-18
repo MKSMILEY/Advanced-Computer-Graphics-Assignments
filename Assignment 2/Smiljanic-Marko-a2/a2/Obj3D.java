@@ -1,3 +1,8 @@
+/*
+Marko Smiljanic
+CSc 155 Section 02
+Due Date: October 15th
+*/
 package a2;
 
 import graphicslib3D.*;
