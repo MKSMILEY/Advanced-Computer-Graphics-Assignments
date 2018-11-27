@@ -11,21 +11,21 @@ import java.nio.*;
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 
-public class MovLFCom extends AbstractAction {
+public class MovLBCom extends AbstractAction {
 	private static Starter st;
 	
-	public MovLFCom(Starter starter) {
-		super("Move Light Forward");
+	public MovLBCom(Starter starter) {
+		super("Move Light Back");
 		st = starter;
 	}
 	
 	public void actionPerformed (ActionEvent e) {
 		try {
-			System.out.println("MovLFCom action called");
+			System.out.println("MovLBCom action called");
 			st.addLight(0.0f, 0.0f, 0.1f);
 		}
 		catch(NullPointerException err) {
-			System.out.println("MovLFCom NullPointerException Caught");
+			System.out.println("MovLBCom NullPointerException Caught");
 		}
 	}
 }

@@ -33,7 +33,7 @@ public class Starter extends JFrame implements GLEventListener {
 	private String[] vBlinn1ShaderSource, vBlinn2ShaderSource, fBlinn2ShaderSource;
 	private int rendering_program1, rendering_program2;
 	private int vao[] = new int[1];
-	private int vbo[] = new int[15];
+	private int vbo[] = new int[18];
 	private int mv_location, proj_location, vertexLoc, n_location;
 	private float aspect;
 	private GLSLUtils util = new GLSLUtils();
@@ -71,9 +71,11 @@ public class Starter extends JFrame implements GLEventListener {
 	private LineObj xAxis = new LineObj(0.0f, 0.0f, 0.0f, 0);
 	private LineObj yAxis = new LineObj(0.0f, 0.0f, 0.0f, 1);
 	private LineObj zAxis = new LineObj(0.0f, 0.0f, 0.0f, 2);
+	private SphereObj bulb = new SphereObj((float) lightLoc.getX(), (float) lightLoc.getY(), (float) lightLoc.getZ(), 48);
 	
 	private int numPyramidVertices, numTorusVertices, numDolVertices;
 	private boolean axes = true;
+	private boolean tlight = false;
 	
 	private int pyramidTexture;
 	private Texture joglPyramidTexture;
@@ -150,6 +152,9 @@ public class Starter extends JFrame implements GLEventListener {
 		KeyStroke iKey = KeyStroke.getKeyStroke('i');
 		imap.put(iKey, "light up");
 		
+		KeyStroke tKey = KeyStroke.getKeyStroke('t');
+		imap.put(tKey, "toggle light");
+		
 		
 		ActionMap amap = contentPane.getActionMap();
 		
@@ -203,6 +208,9 @@ public class Starter extends JFrame implements GLEventListener {
 		
 		MovLBCom movLB = new MovLBCom(this);
 		amap.put("light backward", movLB);
+		
+		ToggleLightCom togLight = new ToggleLightCom(this);
+		amap.put("toggle light", togLight);
 		
 		this.requestFocus();
 		
@@ -348,6 +356,10 @@ public class Starter extends JFrame implements GLEventListener {
 		n_location = gl.glGetUniformLocation(rendering_program2, "normalMat");
 		int shadow_location = gl.glGetUniformLocation(rendering_program2,  "shadowMVP");
 		
+		/*if(!tlight) {
+			currentLight.setAmbient(0.0f);
+		}*/
+		
 		if(axes) {
 			m_matrix.setToIdentity();
 			m_matrix.translate(0, 0, 0);
@@ -362,6 +374,7 @@ public class Starter extends JFrame implements GLEventListener {
 			mv_matrix.concatenate(m_matrix);
 			
 			gl.glDisable(GL_CULL_FACE);
+
 			
 			//Red x-axis
 			gl.glUniformMatrix4fv(mv_location, 1, false, mv_matrix.getFloatValues(), 0);
@@ -428,6 +441,7 @@ public class Starter extends JFrame implements GLEventListener {
 		v_matrix.setToIdentity();
 		v_matrix.concatenate(cam.getView());
 		
+		gl.glDisable(GL2.GL_LIGHTING);
 		installLights(rendering_program2, v_matrix);
 		
 		//  build the MODEL-VIEW matrix
@@ -566,6 +580,39 @@ public class Starter extends JFrame implements GLEventListener {
 		gl.glDepthFunc(GL_LEQUAL);
 
 		gl.glDrawArrays(GL_TRIANGLES, 0, dolphin.getNumVertices());
+		
+		m_matrix.setToIdentity();
+		m_matrix.translate(bulb.getPoint().getX(), bulb.getPoint().getY(), bulb.getPoint().getZ());
+		m_matrix.scale(0.25, 0.25, 0.25);
+		
+		v_matrix.setToIdentity();
+		v_matrix.concatenate(cam.getView());
+		
+		mv_matrix.setToIdentity();
+		mv_matrix.concatenate(v_matrix);
+		mv_matrix.concatenate(m_matrix);
+		
+		gl.glUniformMatrix4fv(mv_location, 1, false, mv_matrix.getFloatValues(), 0);
+		gl.glUniformMatrix4fv(proj_location, 1, false, proj_matrix.getFloatValues(), 0);
+		gl.glUniformMatrix4fv(n_location, 1, false, (mv_matrix.inverse()).transpose().getFloatValues(),0);
+			
+		gl.glBindBuffer(GL_ARRAY_BUFFER, vbo[15]);
+		gl.glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+		gl.glEnableVertexAttribArray(0);
+		
+		gl.glBindBuffer(GL_ARRAY_BUFFER, vbo[16]);
+		gl.glVertexAttribPointer(1, 3, GL_FLOAT, false, 0, 0);
+		gl.glEnableVertexAttribArray(1);
+		
+		//gl.glEnable(GL_CULL_FACE);
+		//gl.glFrontFace(GL_CCW);
+		gl.glEnable(GL_DEPTH_TEST);
+		//gl.glDepthFunc(GL_LEQUAL);
+		
+		int numVerts = bulb.getIndices().length;
+		gl.glDrawArrays(GL_TRIANGLES, 0, numVerts);
+		
+		
 	}
 
 //------------------
@@ -720,6 +767,24 @@ public class Starter extends JFrame implements GLEventListener {
 		
 		numTorusVertices = torus_indices.length;
 
+		Vertex3D[] vertices = bulb.getVertices();
+		int[] indices = bulb.getIndices();
+		
+		float[] pvalues = new float[indices.length*3];
+		float[] tvalues = new float[indices.length*2];
+		float[] nvalues = new float[indices.length*3];
+		
+		for (int i=0; i<indices.length; i++)
+		{	pvalues[i*3] = (float) (vertices[indices[i]]).getX();
+			pvalues[i*3+1] = (float) (vertices[indices[i]]).getY();
+			pvalues[i*3+2] = (float) (vertices[indices[i]]).getZ();
+			tvalues[i*2] = (float) (vertices[indices[i]]).getS();
+			tvalues[i*2+1] = (float) (vertices[indices[i]]).getT();
+			nvalues[i*3] = (float) (vertices[indices[i]]).getNormalX();
+			nvalues[i*3+1]= (float)(vertices[indices[i]]).getNormalY();
+			nvalues[i*3+2]=(float) (vertices[indices[i]]).getNormalZ();
+		}
+		
 		gl.glGenVertexArrays(vao.length, vao, 0);
 		gl.glBindVertexArray(vao[0]);
 
@@ -788,6 +853,19 @@ public class Starter extends JFrame implements GLEventListener {
 		gl.glBindBuffer(GL_ARRAY_BUFFER, vbo[14]);
 		FloatBuffer dolTexBuf = Buffers.newDirectFloatBuffer(dolt);
 		gl.glBufferData(GL_ARRAY_BUFFER, dolTexBuf.limit()*4, dolTexBuf, GL_STATIC_DRAW);
+	
+		// put the sphere vertices, normals, and textures into the 15, 16, and 17 buffers
+		gl.glBindBuffer(GL_ARRAY_BUFFER, vbo[15]);
+		FloatBuffer spherePBuf = Buffers.newDirectFloatBuffer(pvalues);
+		gl.glBufferData(GL_ARRAY_BUFFER, spherePBuf.limit()*4, spherePBuf, GL_STATIC_DRAW);
+		
+		gl.glBindBuffer(GL_ARRAY_BUFFER, vbo[16]);
+		FloatBuffer sphereNBuf = Buffers.newDirectFloatBuffer(nvalues);
+		gl.glBufferData(GL_ARRAY_BUFFER, sphereNBuf.limit()*4, sphereNBuf, GL_STATIC_DRAW);
+		
+		gl.glBindBuffer(GL_ARRAY_BUFFER, vbo[17]);
+		FloatBuffer sphereTBuf = Buffers.newDirectFloatBuffer(tvalues);
+		gl.glBufferData(GL_ARRAY_BUFFER, sphereTBuf.limit()*4, sphereTBuf, GL_STATIC_DRAW);
 	}
 	
 //------------------
@@ -822,11 +900,14 @@ public class Starter extends JFrame implements GLEventListener {
 		int MshiLoc = gl.glGetUniformLocation(rendering_program, "material.shininess");
 
 		// set the uniform light and material values in the shader
-		gl.glProgramUniform4fv(rendering_program, ambLoc, 1, currentLight.getAmbient(), 0);
-		gl.glProgramUniform4fv(rendering_program, diffLoc, 1, currentLight.getDiffuse(), 0);
-		gl.glProgramUniform4fv(rendering_program, specLoc, 1, currentLight.getSpecular(), 0);
-		gl.glProgramUniform3fv(rendering_program, posLoc, 1, currLightPos, 0);
-	
+		//if(tlight) {
+			gl.glProgramUniform4fv(rendering_program, ambLoc, 1, currentLight.getAmbient(), 0);
+			gl.glProgramUniform4fv(rendering_program, diffLoc, 1, currentLight.getDiffuse(), 0);
+			gl.glProgramUniform4fv(rendering_program, specLoc, 1, currentLight.getSpecular(), 0);
+			gl.glProgramUniform3fv(rendering_program, posLoc, 1, currLightPos, 0);
+		//}
+
+		
 		gl.glProgramUniform4fv(rendering_program, MambLoc, 1, currentMaterial.getAmbient(), 0);
 		gl.glProgramUniform4fv(rendering_program, MdiffLoc, 1, currentMaterial.getDiffuse(), 0);
 		gl.glProgramUniform4fv(rendering_program, MspecLoc, 1, currentMaterial.getSpecular(), 0);
@@ -877,6 +958,10 @@ public class Starter extends JFrame implements GLEventListener {
 //------------------
 	public void toggleAxes() {
 		axes = !axes;
+	}
+	
+	public void toggleLight() {
+		tlight = !tlight;
 	}
 
 //------------------
@@ -930,12 +1015,15 @@ public class Starter extends JFrame implements GLEventListener {
 	}
 	
 	public void addLight(float x, float y, float z) {
-		float tempX = (float) lightLoc.getX();
-		float tempY = (float) lightLoc.getY();
-		float tempZ = (float) lightLoc.getZ();
-		
-		lightLoc.setX(tempX + x);
-		lightLoc.setY(tempY + y);
-		lightLoc.setZ(tempZ + z);
+		if(tlight) {
+			float tempX = (float) lightLoc.getX();
+			float tempY = (float) lightLoc.getY();
+			float tempZ = (float) lightLoc.getZ();
+			
+			lightLoc.setX(tempX + x);
+			lightLoc.setY(tempY + y);
+			lightLoc.setZ(tempZ + z);
+			bulb.setPoint((float) lightLoc.getX(), (float) lightLoc.getY(), (float) lightLoc.getZ());
+		}
 	}
 }
