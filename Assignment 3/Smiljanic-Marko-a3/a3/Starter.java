@@ -75,7 +75,7 @@ public class Starter extends JFrame implements GLEventListener {
 	
 	private int numPyramidVertices, numTorusVertices, numDolVertices;
 	private boolean axes = true;
-	private boolean tlight = false;
+	private boolean tlight = true;
 	
 	private int pyramidTexture;
 	private Texture joglPyramidTexture;
@@ -356,9 +356,25 @@ public class Starter extends JFrame implements GLEventListener {
 		n_location = gl.glGetUniformLocation(rendering_program2, "normalMat");
 		int shadow_location = gl.glGetUniformLocation(rendering_program2,  "shadowMVP");
 		
-		/*if(!tlight) {
-			currentLight.setAmbient(0.0f);
-		}*/
+		
+		if(!tlight) {
+			float[] amb = new float[] {0.0f, 0.0f, 0.0f, 0.0f};
+			float[] dif = new float[] {0.0f, 0.0f, 0.0f, 0.0f};
+			float[] spec = new float[] {0.0f, 0.0f, 0.0f, 0.0f};
+			
+			currentLight.setAmbient(amb);
+			currentLight.setDiffuse(dif);
+			currentLight.setSpecular(spec);
+		}
+		else {
+			float[] amb = new float[] {1.0f, 1.0f, 1.0f, 1.0f};
+			float[] dif = new float[] {1.0f, 1.0f, 1.0f, 1.0f};
+			float[] spec = new float[] {1.0f, 1.0f, 1.0f, 1.0f};
+			
+			currentLight.setAmbient(amb);
+			currentLight.setDiffuse(dif);
+			currentLight.setSpecular(spec);
+		}
 		
 		if(axes) {
 			m_matrix.setToIdentity();
